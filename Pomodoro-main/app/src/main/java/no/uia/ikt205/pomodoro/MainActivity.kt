@@ -4,125 +4,147 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.View
-import android.widget.Button
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import no.uia.ikt205.pomodoro.util.millisecondsToDescriptiveTime
 
 class MainActivity : AppCompatActivity() {
 
-    // If you do not want to initialize a variable in the constructor,
-    // instead you want to initialize it later on and if you can guarantee,
-    // the initialization before using it.
-    lateinit var timer:CountDownTimer
+    lateinit var timer: CountDownTimer
+    lateinit var pauseTime: CountDownTimer
     lateinit var startButton: Button
-    lateinit var coutdownDisplay:TextView
+    lateinit var countdownDisplay: TextView
+    lateinit var timeSelect: SeekBar
+    lateinit var repetitionCounter: EditText
+    lateinit var pauseText: TextView
+    lateinit var pauseSelect: SeekBar
+//
 
-    lateinit var button30: Button
-    lateinit var button60: Button
-    lateinit var button90: Button
-    lateinit var button120: Button
-    lateinit var stopButton: Button
+    private var countDownStart: Boolean = false
+    private var pauseCountDownStart: Boolean = false
 
+    private var countDownTimeInMs = 15 * 60000L
+    private var pauseCountDownInMs = 15 * 60000L
+    private val timeTicks = 1000L
+    private var repetitoinAmount:Int = 0
 
-
-    var timeToCountDownInMs = 5000L
-    val timeTicks = 1000L
-    var timeStopped = 0L
-    var isTimeStarted = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        pauseText = findViewById(R.id.pauseText)
+        pauseText.visibility = View.INVISIBLE
 
+        timeSelect = findViewById<SeekBar>(R.id.timeSelect)
+        timeSelect.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (countDownStart) {
+                    timer.cancel()
+                    countDownStart = false
+                }
+                countDownTimeInMs = progress * 60000L
 
-        button30 = findViewById<Button>(R.id.startCountdownButton30)
-        button60 = findViewById<Button>(R.id.startCountdownButton60)
-        button90 = findViewById<Button>(R.id.startCountdownButton90)
-        button120 = findViewById<Button>(R.id.startCountdownButton120)
-
-        button30.setOnClickListener(){
-            if (!isTimeStarted){
-                timeToCountDownInMs = 30 * 60 * 1000;
-                updateCountDownDisplay(timeToCountDownInMs)
+                // Update timer visually when sliding
+                updateCountDownDisplay(countDownTimeInMs)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                print("Is not implemented")
             }
 
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                print("Is not implemented")
+            }
+        })
 
-        }
-        button60.setOnClickListener(){
-            if (!isTimeStarted){
-                timeToCountDownInMs = 60 * 60 * 1000;
-                updateCountDownDisplay(timeToCountDownInMs)
+        pauseSelect = findViewById<SeekBar>(R.id.pauseSelect)
+        pauseSelect.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                pauseCountDownInMs = progress * 60000L
             }
 
-        }
-        button90.setOnClickListener(){
-            if (!isTimeStarted){
-                timeToCountDownInMs = 90 * 60 * 1000;
-                updateCountDownDisplay(timeToCountDownInMs)
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                print("Not implemented")
             }
 
-        }
-        button120.setOnClickListener(){
-            if (!isTimeStarted){
-                timeToCountDownInMs = 120 * 60 * 1000;
-                updateCountDownDisplay(timeToCountDownInMs)
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                print("Not implemented")
             }
+        })
 
-        }
+        repetitionCounter = findViewById<EditText>(R.id.repetition)
 
-        startButton = findViewById<Button>(R.id.startCountdownButton)
-        startButton.setOnClickListener(){
-            if (isTimeStarted){
-                Toast.makeText(this@MainActivity, "Timer running", Toast.LENGTH_SHORT).show()
+       startButton = findViewById<Button>(R.id.startCountdownButton)
+       startButton.setOnClickListener(){
+           startCountDown(it)
+       }
+        countdownDisplay = findViewById<TextView>(R.id.countDownView)
 
-            }else {
-                startCountDown(it)
-
-                isTimeStarted = true;
-            }
-
-        }
-
-        coutdownDisplay = findViewById<TextView>(R.id.countDownView)
-
-        stopButton = findViewById<Button>(R.id.stopCountdownButton)
-        stopButton.setOnClickListener(){
-        }
-        if (isTimeStarted){
-            timer.cancel()
-            timeToCountDownInMs = timeStopped;
-            updateCountDownDisplay(timeToCountDownInMs)
-            isTimeStarted = false;
-
-        }else {
-            Toast.makeText(this@MainActivity, "Timer is not started!", Toast.LENGTH_SHORT).show()
-        }
+        // Enforce timer to show 15 minutes as start value on activity mount
+        updateCountDownDisplay(countDownTimeInMs)
     }
 
+    private fun startCountDown(v: View) {
+        if (countDownStart) {
+            timer.cancel()
+            countDownStart = false
+            Toast.makeText(this@MainActivity, "Stopping all timers", Toast.LENGTH_SHORT).show()
+            return
+        }
 
-
-
-    fun startCountDown(v: View){
-
-        timer = object : CountDownTimer(timeToCountDownInMs,timeTicks) {
+        timer = object : CountDownTimer(countDownTimeInMs, timeTicks) {
             override fun onFinish() {
-                Toast.makeText(this@MainActivity,"Time done", Toast.LENGTH_SHORT).show()
-                updateCountDownDisplay(timeToCountDownInMs)
-                isTimeStarted = false
+                Toast.makeText(this@MainActivity, "Arbeidsøkt er ferdig", Toast.LENGTH_SHORT).show()
+                countDownStart = false
+
+                repetitoinAmount = repetitionCounter.text.toString().toInt()
+                if (repetitoinAmount > 0) {
+                    Toast.makeText(this@MainActivity, "Tid for en pause", Toast.LENGTH_SHORT).show()
+                    startPauseTimer(v)
+                    repetitoinAmount--
+                    repetitionCounter.setText(repetitoinAmount.toString())
+                }
             }
 
             override fun onTick(millisUntilFinished: Long) {
                 updateCountDownDisplay(millisUntilFinished)
-                timeToCountDownInMs = millisUntilFinished
             }
         }
-
         timer.start()
+        countDownStart = true
     }
 
-    fun updateCountDownDisplay(timeInMs:Long){
-        coutdownDisplay.text = millisecondsToDescriptiveTime(timeInMs)
-    }
+        private fun startPauseTimer(v: View) {
+            if (pauseCountDownStart) {
+                pauseTime.cancel()
+                pauseCountDownStart = false
+            }
+
+            pauseTime = object : CountDownTimer(pauseCountDownInMs, timeTicks) {
+                override fun onFinish() {
+                    Toast.makeText(this@MainActivity, "Pausen er over.", Toast.LENGTH_SHORT).show()
+                    pauseCountDownStart = false
+
+                    repetitoinAmount = repetitionCounter.text.toString().toInt()
+                    if (repetitoinAmount > 0) {
+                        timer.start()
+                    } else {
+                        timer.cancel()
+                    }
+
+                    pauseText.visibility = View.INVISIBLE
+                }
+
+                override fun onTick(millisUntilFinished: Long) {
+                    pauseText.visibility = View.VISIBLE
+                    updateCountDownDisplay(millisUntilFinished)
+                }
+            }
+            pauseTime.start()
+            pauseCountDownStart = true
+        }
+
+        fun updateCountDownDisplay(timeInMs: Long){
+            countdownDisplay.text = millisecondsToDescriptiveTime(timeInMs)
+
+        }
 
 }
