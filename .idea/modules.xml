@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/superpiano.iml" filepath="$PROJECT_DIR$/.idea/modules/superpiano.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/superpiano.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/superpiano.app.iml" />
+    </modules>
+  </component>
+</project>
