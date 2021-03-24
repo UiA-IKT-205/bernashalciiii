@@ -1,5 +1,6 @@
 package com.example.superpiano
 
+import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
 import androidx.fragment.app.Fragment
@@ -7,7 +8,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.net.toUri
 import com.example.superpiano.databinding.FragmentPianoLayoutBinding
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import kotlinx.android.synthetic.main.fragment_piano_layout.*
 import kotlinx.android.synthetic.main.fragment_piano_layout.view.*
 import java.io.File
@@ -16,6 +20,9 @@ import java.io.FileOutputStream
 
 
 class PianoLayout : Fragment() {
+
+    var onSave:((file: Uri) -> Unit)? = null
+
     private var _binding: FragmentPianoLayoutBinding? = null
     private val binding get() = _binding!!
 
@@ -28,6 +35,7 @@ class PianoLayout : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
@@ -100,18 +108,12 @@ class PianoLayout : Fragment() {
 
                 else -> {
                     fileName = "$fileName.music"
-                    FileOutputStream(newMusicFile, true).bufferedWriter().use { writer ->
-                        pianoSheet.forEach {
-                            writer.write("${it.toString()}\n")
-                        }
+                    val content:String = pianoSheet.map {
+                        it.toString()
+                    }.reduce {
+                        acc, s -> acc + s + "\n"
                     }
-                    Toast.makeText(activity, "Your file has been saved!", Toast.LENGTH_SHORT).show()
-                    pianoSheet.clear()
-                    fileNameInput.text.clear()
-                    FileOutputStream(newMusicFile).close()
-
-                    println("Saved as: $fileName")
-                    println("Saved at: $filePath/$fileName")
+                    saveFile(fileName, content)
                 }
             }
         }
@@ -129,6 +131,25 @@ class PianoLayout : Fragment() {
         if (recordingIsActive){
             recordingTimeChronometer.stop()
             recordingIsActive = false
+        }
+    }
+
+    private fun saveFile(fileName:String, content:String){
+        val filePath = this.activity?.getExternalFilesDir(null)
+
+        if(filePath != null){
+            val file = File(filePath, fileName)
+            FileOutputStream(file, true).bufferedWriter().use { writer ->
+                writer.write(content)
+            }
+
+            this.onSave?.invoke(file.toUri())
+            Toast.makeText(activity, "Your file has been saved!", Toast.LENGTH_SHORT).show()
+            pianoSheet.clear()
+            fileNameInput.text.clear()
+            FileOutputStream(File(filePath, fileName)).close()
+        }else {
+            Toast.makeText(activity, "Could not get external file path", Toast.LENGTH_SHORT).show()
         }
     }
 }
